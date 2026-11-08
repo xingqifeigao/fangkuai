@@ -679,6 +679,11 @@ class SingletonUpdater:
         if self._engine.token is not None:
             if self._engine.name == "gitlab":
                 request.add_header('PRIVATE-TOKEN', self._engine.token)
+            elif self._engine.name == "github":
+                # [适配改造] 上游只给 GitLab 加了 token，GitHub 反而没加。
+                # 共享出口 IP 被限流（403）时，配 token 是唯一稳定的解法。
+                request.add_header('Authorization',
+                                   "Bearer " + self._engine.token)
             else:
                 self.print_verbose("Tokens not setup for engine yet")
 
@@ -693,14 +698,29 @@ class SingletonUpdater:
             else:
                 result = urllib.request.urlopen(request)
         except urllib.error.HTTPError as e:
+            # [适配改造] 把服务端返回的正文读出来。上游只报一句
+            # "403 - server error response"，完全分不清是限流、被墙，
+            # 还是仓库/标签不存在。
+            detail = ""
+            try:
+                detail = e.read().decode("utf-8", "replace").strip()
+            except Exception:
+                detail = ""
+            if detail:
+                try:
+                    detail = str(json.loads(detail).get("message", detail))
+                except Exception:
+                    pass
+                detail = " ".join(detail.split())[:180]
             if str(e.code) == "403":
                 self._error = "HTTP error (access denied)"
-                self._error_msg = str(e.code) + " - server error response"
-                print(self._error, self._error_msg)
+                self._error_msg = ("403 - " + detail) if detail else \
+                    "403 - server error response"
             else:
                 self._error = "HTTP error"
-                self._error_msg = str(e.code)
-                print(self._error, self._error_msg)
+                self._error_msg = str(e.code) + (
+                    (" - " + detail) if detail else "")
+            print(self._error, self._error_msg)
             self.print_trace()
             self._update_ready = None
         except urllib.error.URLError as e:
@@ -781,6 +801,10 @@ class SingletonUpdater:
             if self._engine.token is not None:
                 if self._engine.name == "gitlab":
                     request.add_header('PRIVATE-TOKEN', self._engine.token)
+                elif self._engine.name == "github":
+                    # [适配改造] 下载同样需要带 token，否则私有仓库拿不到包
+                    request.add_header('Authorization',
+                                       "Bearer " + self._engine.token)
                 else:
                     self.print_verbose(
                         "Tokens not setup for selected engine yet")

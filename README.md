@@ -36,7 +36,7 @@
 
 1. 偏好设置（`Edit > Preferences`）→ **插件 / Add-ons**
 2. 右上角 `⌄` → **从磁盘安装 / Install from Disk...**
-3. 选择 `cube_generator_1.0.1.zip`（**不要解压**）
+3. 选择 `cube_generator_1.1.1.zip`（**不要解压**）
 4. 在列表中勾选启用 **Cube Generator**
 
 > ⚠️ 必须用 **zip** 安装。更新器依赖插件以「包（文件夹）」形式存在于
@@ -79,8 +79,8 @@ fangkuai/                        ← 仓库根
 ### 第 3 步：打 tag 发版
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
 - tag 名带不带 `v` 前缀都行（`v1.0.1` / `1.0.1` 都能正确解析）
@@ -110,7 +110,7 @@ cube_generator/
 ## 五、为 Blender 4.5 做的适配改动
 
 上游 `addon_updater` 主分支停留在 2.8x 时代，直接塞进 4.5 能跑但有几处坑。
-本包在保持上游 API 完全不变的前提下做了 5 处改动，均以 `[适配改造]` /
+本包在保持上游 API 完全不变的前提下做了 7 处改动，均以 `[适配改造]` /
 `[4.x 适配]` 注释标出：
 
 | 位置 | 改动 | 原因 |
@@ -119,9 +119,9 @@ cube_generator/
 | `register()` 配置段 | `user/repo/website/token` 改为从 `bl_info` 读取 | 仓库地址只需在 `__init__.py` 改一处，避免两份配置漂移 |
 | `register()` | `verbose`、`include_branches`、`use_releases` 改为 `bl_info` 驱动，默认关闭 | 面向正式发版，减少控制台噪音和多余按钮 |
 | 两个 `@persistent` handler | 签名改为 `(scene, depsgraph=None)` | 它们被挂到 `depsgraph_update_post`；4.x 会传两个参数，双签名两种都兼容 |
-| `__init__.py` | 更新器注册包裹 `try/except`，失败只降级不影响方块功能 | 断网、代理异常时插件主功能仍可用 |
-
-`addon_updater.py` 未做任何逻辑改动。
+| `addon_updater.py` `get_raw()` / 下载请求 | 补上 GitHub 的 `Authorization: Bearer <token>` | 上游只给 GitLab 加了 token，GitHub 反而没加；共享出口 IP 被限流时 token 是唯一稳定解法 |
+| `addon_updater.py` HTTPError 分支 | 把服务端返回的 `message` 字段带进 `error_msg` | 原来 403 只有一句 "server error response"，分不清限流、被墙还是仓库不存在 |
+| `__init__.py` | 更新器注册包裹 `try/except`；新增 `draw_update_hint()` 把英文报错翻成中文可操作提示 | 断网、代理异常时插件主功能仍可用；用户能看懂下一步该做什么 |
 
 ---
 
@@ -171,7 +171,28 @@ cube_generator/
 
 仓库没打 tag，见上面第 1 条。
 
-### 提示 HTTP Error 403 / 502
+### 提示 HTTP Error 403 / 502（访问被拒绝）
 
-GitHub 接口被限流或网络不稳。匿名 API 限流是 60 次/小时，等一小时或换个网络再试。
+403 不是插件没有权限，是 **GitHub 服务端拒绝了这个请求**。常见两种原因：
+
+1. **短时间请求过多** —— 主限流是 60 次/小时，另外还有「次要限流」（abuse
+   detection），触发后即使额度没用完也会返回 403。等 10~30 分钟再试即可。
+2. **出口 IP 被 GitHub 拦截** —— 用共享代理 / 机场节点时很常见，换个节点或关掉代理试试。
+
+想长期避免，可以在 `bl_info` 里配一个 GitHub Token（只给 public repo 读权限就够）：
+
+```python
+"updater_token": "ghp_xxxxxxxx",
+```
+
+配了之后请求会带 `Authorization: Bearer`，限流额度从 60 次/小时提到 5000 次/小时，
+也不容易因为出口 IP 被连带封禁。
+
+本插件在偏好设置里已经把这类报错翻成中文提示，只要能看懂「GitHub 拒绝了这次请求」
+就是这一类问题，不用再猜。
+
+### 提示 HTTP Error 502
+
+GitHub 侧网关抖动，纯网络问题，重试即可。
+
 

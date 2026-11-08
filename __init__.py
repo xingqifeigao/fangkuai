@@ -291,6 +291,42 @@ class CUBE_PT_main(Panel):
 
 
 # -----------------------------------------------------------------------------
+# 把更新器的英文报错翻译成能直接照做的中文提示
+# -----------------------------------------------------------------------------
+def draw_update_hint(layout):
+    """根据 updater 的错误内容，在偏好设置里给出可操作的中文说明"""
+    updater = addon_updater_ops.updater
+    if getattr(updater, "invalid_updater", False):
+        return
+
+    err = "{} {}".format(getattr(updater, "error", "") or "",
+                         getattr(updater, "error_msg", "") or "")
+    err = err.strip()
+    if not err:
+        return
+    low = err.lower()
+
+    box = layout.box()
+    col = box.column(align=True)
+
+    if "403" in low or "access denied" in low or "429" in low:
+        col.label(text="GitHub 拒绝了这次请求", icon="ERROR")
+        col.label(text="短时间请求过多会被限流，或当前代理 IP 被拦。")
+        col.label(text="等 10~30 分钟再试。长期方案：配 updater_token。")
+    elif "no releases" in low or "no versions" in low:
+        col.label(text="仓库里还没有可用的版本标签", icon="INFO")
+        col.label(text="去 GitHub 的 Releases 页面发布一个 tag，")
+        col.label(text="例如 v1.1.1，然后再点检查更新。")
+    elif ("url" in low or "timed out" in low or "resolve" in low
+            or "ssl" in low or "connection" in low):
+        col.label(text="连不上 GitHub", icon="ERROR")
+        col.label(text="检查网络或代理设置后重试。")
+    else:
+        col.label(text="更新检查未成功", icon="ERROR")
+        col.label(text=err[:80])
+
+
+# -----------------------------------------------------------------------------
 # 偏好设置：方块默认值 + 更新器 UI
 # -----------------------------------------------------------------------------
 class CubeGeneratorPreferences(AddonPreferences):
@@ -321,6 +357,7 @@ class CubeGeneratorPreferences(AddonPreferences):
         layout.separator()
         if _updater_ok:
             addon_updater_ops.update_settings_ui(self, context)
+            draw_update_hint(layout)
         else:
             warn = layout.box()
             warn.label(text="更新模块未能加载", icon="ERROR")
