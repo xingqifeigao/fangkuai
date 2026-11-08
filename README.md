@@ -1,3 +1,14 @@
+# Cube Generator — Blender 方块生成器（含 GitHub 自动更新）
+
+面向 **Blender 4.5 LTS** 的插件：一键生成可定制方块，并集成
+[blender-addon-updater](https://github.com/CGCookie/blender-addon-updater) 实现
+「检查更新 / 一键安装」的完整发版链路。
+
+已实测环境：Blender **4.5.5 LTS** / Python 3.11.11。
+
+---
+
+## 一、功能
 
 ### 1. 生成方块
 - **边长**：精确控制，生成结果严格等于设定值
@@ -25,7 +36,7 @@
 
 1. 偏好设置（`Edit > Preferences`）→ **插件 / Add-ons**
 2. 右上角 `⌄` → **从磁盘安装 / Install from Disk...**
-3. 选择 `cube_generator_1.0.0.zip`（**不要解压**）
+3. 选择 `cube_generator_1.0.1.zip`（**不要解压**）
 4. 在列表中勾选启用 **Cube Generator**
 
 > ⚠️ 必须用 **zip** 安装。更新器依赖插件以「包（文件夹）」形式存在于
@@ -35,12 +46,14 @@
 
 ## 三、配置成你自己的更新源（3 步）
 
-### 第 1 步：改 `__init__.py` 里的 `bl_info`
+### 第 1 步：`__init__.py` 里的 `bl_info`（已配置好）
+
+本插件的更新源已指向 `xingqifeigao/fangkuai`：
 
 ```python
-"updater_user": "你的GitHub用户名",
-"updater_repo": "blender-cube-generator",          # 仓库名
-"updater_website": "https://github.com/你/blender-cube-generator",
+"updater_user": "xingqifeigao",
+"updater_repo": "fangkuai",
+"updater_website": "https://github.com/xingqifeigao/fangkuai",
 ```
 
 只有这一处需要改，`addon_updater_ops.py` 不用动。版本号读的是同一份
@@ -49,7 +62,7 @@
 ### 第 2 步：仓库根目录放插件文件
 
 ```
-blender-cube-generator/          ← 仓库根
+fangkuai/                        ← 仓库根
 ├── __init__.py
 ├── addon_updater.py
 ├── addon_updater_ops.py
@@ -58,6 +71,10 @@ blender-cube-generator/          ← 仓库根
 
 即把 `cube_generator/` **里面的内容**放到仓库根目录（不是把 `cube_generator`
 文件夹本身放进去）。更新器会自动剥掉 GitHub 源码包多出来的那一层目录。
+
+> 这一点很关键：更新器下载的是**仓库里的代码**，所以仓库里的 `__init__.py`
+> 必须是配好仓库地址的那一份。如果仓库里放的是带 `YOUR_GITHUB_USERNAME`
+> 占位符的版本，更新一次就会把本地的配置覆盖回占位符，更新功能随即失效。
 
 ### 第 3 步：打 tag 发版
 
@@ -130,3 +147,31 @@ cube_generator/
 - 开发机上不要直接点「更新」，会覆盖你本地正在改的代码；先把改动提交
 - GitHub 匿名 API 有 60 次/小时限流，正常使用完全够
 - 插件目录内会生成 `cube_generator_updater/` 暂存与备份文件夹，属正常现象
+
+---
+
+## 八、排错
+
+### 点「更新」提示访问被拒 / 更新没有反应
+
+按顺序排查：
+
+1. **仓库有没有 tag？** 打开 `https://github.com/用户名/仓库/tags`，如果是空的，
+   就是没有任何可更新的版本，任何更新操作都不会成功。更新器比对的是 **tag**，
+   不是 commit，也不是 `bl_info` 里的版本号。
+2. **仓库里的 `__init__.py` 是不是配好的那份？** 打开仓库网页看第 31~33 行，
+   如果还是 `YOUR_GITHUB_USERNAME`，说明上传的是占位符版本。必须换成填好仓库地址的。
+3. **`bl_info["version"]` 是否小于 tag 的版本？** 相等或更大都不会提示更新。
+4. 看 Blender 的报错详情：菜单 **窗口 → 切换系统控制台**（Window → Toggle System
+   Console），里面会有完整 traceback。
+5. 检查插件目录 `cube_generator_updater/` 里有没有 `update_staging` / `source` 文件夹。
+   完全没有，说明下载根本没启动，问题在「没有可用版本」而不是文件权限。
+
+### 提示 No releases or tags found in repository
+
+仓库没打 tag，见上面第 1 条。
+
+### 提示 HTTP Error 403 / 502
+
+GitHub 接口被限流或网络不稳。匿名 API 限流是 60 次/小时，等一小时或换个网络再试。
+

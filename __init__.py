@@ -18,7 +18,7 @@
 bl_info = {
     "name": "Cube Generator",
     "author": "Your Name",
-    "version": (1, 1, 1),
+    "version": (1, 0, 1),
     "blender": (4, 2, 0),
     "location": "3D 视图 > 侧边栏(N) > Cube / 添加 > 网格 > 方块",
     "description": "一键生成可定制方块，内置 GitHub 自动更新",
@@ -28,9 +28,9 @@ bl_info = {
     # 把下面三处替换成你自己的 GitHub 用户名 / 仓库名 / 主页地址即可。
     # 版本号读的是上面的 "version"，不需要重复填写。
     # ------------------------------------------------------------------
-    "updater_user": "YOUR_GITHUB_USERNAME",
-    "updater_repo": "blender-cube-generator",
-    "updater_website": "https://github.com/YOUR_GITHUB_USERNAME/blender-cube-generator",
+    "updater_user": "xingqifeigao",
+    "updater_repo": "fangkuai",
+    "updater_website": "https://github.com/xingqifeigao/fangkuai",
     # True = 走 GitHub Releases（需要给每个 Release 附上 zip 附件），
     # False = 走 Tag（自动生成的源码 zip，零额外配置，推荐先用这个）。
     "updater_use_releases": False,
