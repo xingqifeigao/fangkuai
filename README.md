@@ -1,14 +1,3 @@
-# Cube Generator — Blender 方块生成器（含 GitHub 自动更新）
-
-面向 **Blender 4.5 LTS** 的插件：一键生成可定制方块，并集成
-[blender-addon-updater](https://github.com/CGCookie/blender-addon-updater) 实现
-「检查更新 / 一键安装」的完整发版链路。
-
-已实测环境：Blender **4.5.5 LTS** / Python 3.11.11。
-
----
-
-## 一、功能
 
 ### 1. 生成方块
 - **边长**：精确控制，生成结果严格等于设定值
