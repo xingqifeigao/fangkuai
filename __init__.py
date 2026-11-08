@@ -18,7 +18,7 @@
 bl_info = {
     "name": "Cube Generator",
     "author": "Your Name",
-    "version": (1, 0, 1),
+    "version": (1, 1, 1),
     "blender": (4, 2, 0),
     "location": "3D 视图 > 侧边栏(N) > Cube / 添加 > 网格 > 方块",
     "description": "一键生成可定制方块，内置 GitHub 自动更新",
